@@ -1,0 +1,36 @@
+---
+title: "JCOPE ANALYSIS"
+author: "Patrick Spauster"
+date: "2023-09-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(googlesheets4)
+library(janitor)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+sof <- read_sheet("https://docs.google.com/spreadsheets/d/1G_5dkzSlSvbVwM7Q-NItgntBawFXDoZaFoq4XPoTSLE/edit#gid=78477068", 
+                  sheet = "Sources of Funding",
+                  col_types = "ccccDd????") %>% 
+  clean_names()
+
+```
+
+```{r}
+sof %>% 
+  group_by(name) %>% 
+  summarize(total_contributions = sum(amount_of_contribution, na.rm = T),
+            )
+
+sof %>% 
+  filter(!is.na(amount_of_contribution)) %>% 
+  count(amount_of_contribution == 0)
+```
+
+
+
