@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+Data/STATE_COMMITTEE.csv
+Data/STATE_CANDIDATE.csv

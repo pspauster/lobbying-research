@@ -7,6 +7,7 @@ Data Sources:
   
 
 - JCOPE - https://ethics.ny.gov/public-data
+- https://reports.ethics.ny.gov/publicreports/Default.aspx
 
 - 990s - https://projects.propublica.org/nonprofits?gclid=CjwKCAjw3oqoBhAjEiwA_UaLtg5Px-ianYEaLIW1VYO-TMaU8-7olJI30B5dAR6tpz-RiRcshi7KKxoCgP8QAvD_BwE 
 	API!! https://projects.propublica.org/nonprofits/api 

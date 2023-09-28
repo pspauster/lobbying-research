@@ -9,6 +9,10 @@ output: html_document
 library(tidyverse)
 library(googlesheets4)
 library(janitor)
+library(RPublica) #https://www.r-project.org/nosvn/pandoc/RPublica.html
+library(curl)
+library(httr)
+library(jsonlite)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -32,5 +36,83 @@ sof %>%
   count(amount_of_contribution == 0)
 ```
 
+```{r}
+
+
+
+```
+
+
+
+```{r}
+
+campaign_finance_filers <- read_csv("Data/COMMCAND.CSV",
+                                    col_names = F)
+
+names(campaign_finance_filers) <- c("filer_id", "filer_name", "compliance_type_desc", "filter_type_desc", "filer_status", "committee_type_desc",
+                                    "office_desc", "district", "county_desc", "municipality_desc_subdivision_desc", "treasurer_first_name",  "treasurer_middle_name", "treasurer_last_name", "address", "city", "state", "zipcode")
+
+pacs <- c("Taxpayers For An Affordable New York Pac", "Real Estate Board PAC", "Jobs For New York")
+
+```
+
+```{r}
+
+real_estate_pacs_filers <- campaign_finance_filers %>% 
+  filter(filer_name %in% pacs)
+
+
+```
+
+```{r}
+
+q = curl_escape("real estate board")
+
+state = "NY"
+
+base_url <- "https://projects.propublica.org/nonprofits/api/v2/search.json"
+
+url_enc <- URLencode(paste0(base_url, "?q=", q, "&state%5Bid%5D=", state))
+
+result <- GET(url_enc)
+
+search <- fromJSON(rawToChar(result$content))
+
+orgs <- search$organizations
+
+rebny_id <- orgs %>% 
+  filter(name == "Real Estate Board Of New York Inc") %>% 
+  pull(ein) %>% 
+  .[1]
+
+```
+
+```{r}
+
+read_csv(url_enc)
+
+httr::GET(url_enc)
+
+
+function (q = NULL, order = NULL, sort = NULL, state = NULL, 
+  ntee = NULL, subsection = NULL, ...) 
+{
+  args <- formals()
+  if (!is.null(q)) 
+    args[names(args) == "q"] <- curl_escape(q)
+  if (!is.null(order)) 
+    args[names(args) == "q"] <- curl_escape(order)
+  names(args)[names(args) == "sort"] <- curl_escape("sort_order")
+  names(args)[names(args) == "state"] <- curl_escape("state[id]")
+  names(args)[names(args) == "ntee"] <- curl_escape("ntee[id]")
+  names(args)[names(args) == "subsection"] <- curl_escape("c_code[id]")
+  args <- paste("?", paste(names(args), args, sep = "=", collapse = "&"), 
+    sep = "")
+  out <- ppQuery("search", "https://projects.propublica.org/nonprofits/api/v2/", 
+    args = args, ...)
+  return(out)
+}
+
+```
 
 
