@@ -13,6 +13,7 @@ library(RPublica) #https://www.r-project.org/nosvn/pandoc/RPublica.html
 library(curl)
 library(httr)
 library(jsonlite)
+
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -64,6 +65,10 @@ real_estate_pacs_filers <- campaign_finance_filers %>%
 
 ```
 
+
+
+
+
 ```{r}
 
 q = curl_escape("real estate board")
@@ -72,7 +77,11 @@ state = "NY"
 
 base_url <- "https://projects.propublica.org/nonprofits/api/v2/search.json"
 
-url_enc <- URLencode(paste0(base_url, "?q=", q, "&state%5Bid%5D=", state))
+url_enc <- URLencode(paste0(base_url,
+                            "?",
+                            "q=",
+                            q,
+                            "&state%5Bid%5D=", state))
 
 result <- GET(url_enc)
 
@@ -80,39 +89,42 @@ search <- fromJSON(rawToChar(result$content))
 
 orgs <- search$organizations
 
-rebny_id <- orgs %>% 
-  filter(name == "Real Estate Board Of New York Inc") %>% 
-  pull(ein) %>% 
-  .[1]
 
 ```
+
 
 ```{r}
 
-read_csv(url_enc)
+chip <- "132617766"
+  
+rsa <- "132634120"
 
-httr::GET(url_enc)
+rebny <- "131201480"
 
 
-function (q = NULL, order = NULL, sort = NULL, state = NULL, 
-  ntee = NULL, subsection = NULL, ...) 
-{
-  args <- formals()
-  if (!is.null(q)) 
-    args[names(args) == "q"] <- curl_escape(q)
-  if (!is.null(order)) 
-    args[names(args) == "q"] <- curl_escape(order)
-  names(args)[names(args) == "sort"] <- curl_escape("sort_order")
-  names(args)[names(args) == "state"] <- curl_escape("state[id]")
-  names(args)[names(args) == "ntee"] <- curl_escape("ntee[id]")
-  names(args)[names(args) == "subsection"] <- curl_escape("c_code[id]")
-  args <- paste("?", paste(names(args), args, sep = "=", collapse = "&"), 
-    sep = "")
-  out <- ppQuery("search", "https://projects.propublica.org/nonprofits/api/v2/", 
-    args = args, ...)
-  return(out)
-}
+
+
+
+org_url <- "https://projects.propublica.org/nonprofits/api/v2/organizations/" 
+
+ein <- rebny_id
+
+org_url_enc <- URLencode(paste0(org_url, ein, ".json"))
+
+org_result <- GET(org_url_enc)
+
+rawToChar(org_result$content)
+
+org_result <- fromJSON(content(org_result, as = "text"), flatten = TRUE)
+
+org <- org_result$organization
+org_filings_d <- org_result$filings_with_data
 
 ```
+Field descriptions
+https://projects.propublica.org/nonprofits/api/#organization-object
+https://www.irs.gov/pub/irs-soi/12eofinextractdoc.xls
+
+This filing data doesn't have the schedule F though...
 
 
