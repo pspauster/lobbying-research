@@ -13,9 +13,64 @@ library(RPublica) #https://www.r-project.org/nosvn/pandoc/RPublica.html
 library(curl)
 library(httr)
 library(jsonlite)
+library(RSocrata)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+https://data.ny.gov/Transparency/Disbursement-of-Public-Monies-Bi-Monthly-Report-Be/i574-v3dp
+```{r}
+
+clients <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=contractual_client_name,COUNT(contractual_client_name)&$group=contractual_client_name&$LIMIT=100000")
+
+lobbyists <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=principal_lobbyist_name,COUNT(principal_lobbyist_name)&$group=principal_lobbyist_name&$LIMIT=100000")
+
+beneficial <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=beneficial_client_name,COUNT(beneficial_client_name)&$group=beneficial_client_name&$LIMIT=100000")
+
+```
+
+
+```{r}
+
+url <- URLencode("https://data.ny.gov/resource/t9kf-dqbc.csv?contractual_client_name=REAL ESTATE BOARD OF NEW YORK, INC.&$limit=20000")
+
+rebny <- read_csv(url)
+
+taxpayers <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?contractual_client_name=TAXPAYERS FOR AN AFFORDABLE NY, INC.&$limit=20000"
+))
+
+homeowners <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?contractual_client_name=Homeowners for an Affordable New York LLC&$limit=20000"
+))
+
+combined <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC' OR beneficial_client_name='REAL ESTATE BOARD OF NEW YORK, INC.' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' &$LIMIT= 100000"))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 
@@ -37,102 +92,7 @@ sof %>%
   count(amount_of_contribution == 0)
 ```
 
-```{r}
 
 
-
-```
-
-
-
-```{r}
-
-campaign_finance_filers <- read_csv("Data/COMMCAND.CSV",
-                                    col_names = F)
-
-names(campaign_finance_filers) <- c("filer_id", "filer_name", "compliance_type_desc", "filter_type_desc", "filer_status", "committee_type_desc",
-                                    "office_desc", "district", "county_desc", "municipality_desc_subdivision_desc", "treasurer_first_name",  "treasurer_middle_name", "treasurer_last_name", "address", "city", "state", "zipcode")
-
-pacs <- c("Taxpayers For An Affordable New York Pac", "Real Estate Board PAC", "Jobs For New York", "Rsa Pac")
-
-```
-
-```{r}
-real_estate_pacs_filers <- campaign_finance_filers %>% 
-  filter(filer_name %in% pacs)
-
-```
-
-
-```{r}
-
-
-
-
-```
-
-
-
-
-
-
-
-```{r}
-
-q = curl_escape("real estate board")
-
-state = "NY"
-
-base_url <- "https://projects.propublica.org/nonprofits/api/v2/search.json"
-
-url_enc <- URLencode(paste0(base_url,
-                            "?",
-                            "q=",
-                            q,
-                            "&state%5Bid%5D=", state))
-
-result <- GET(url_enc)
-
-search <- fromJSON(rawToChar(result$content))
-
-orgs <- search$organizations
-
-
-```
-
-
-```{r}
-
-chip <- "132617766"
-  
-rsa <- "132634120"
-
-rebny <- "131201480"
-
-
-
-
-
-org_url <- "https://projects.propublica.org/nonprofits/api/v2/organizations/" 
-
-ein <- rebny_id
-
-org_url_enc <- URLencode(paste0(org_url, ein, ".json"))
-
-org_result <- GET(org_url_enc)
-
-rawToChar(org_result$content)
-
-org_result <- fromJSON(content(org_result, as = "text"), flatten = TRUE)
-
-org <- org_result$organization
-org_filings_d <- org_result$filings_with_data
-
-```
-Field descriptions
-https://projects.propublica.org/nonprofits/api/#organization-object
-https://www.irs.gov/pub/irs-soi/12eofinextractdoc.xls
-
-This filing data doesn't have the schedule F though...
 
 

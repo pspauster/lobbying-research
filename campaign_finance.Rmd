@@ -1,0 +1,37 @@
+---
+title: "campaign finance"
+author: "Patrick"
+date: "2023-10-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(googlesheets4)
+library(janitor)
+library(RPublica) #https://www.r-project.org/nosvn/pandoc/RPublica.html
+library(curl)
+library(httr)
+library(jsonlite)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+
+campaign_finance_filers <- read_csv("Data/COMMCAND.CSV",
+                                    col_names = F)
+
+names(campaign_finance_filers) <- c("filer_id", "filer_name", "compliance_type_desc", "filter_type_desc", "filer_status", "committee_type_desc",
+                                    "office_desc", "district", "county_desc", "municipality_desc_subdivision_desc", "treasurer_first_name",  "treasurer_middle_name", "treasurer_last_name", "address", "city", "state", "zipcode")
+
+pacs <- c("Taxpayers For An Affordable New York Pac", "Real Estate Board PAC", "Jobs For New York", "Rsa Pac")
+
+```
+
+```{r}
+real_estate_pacs_filers <- campaign_finance_filers %>% 
+  filter(filer_name %in% pacs)
+
+```

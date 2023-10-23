@@ -1,0 +1,77 @@
+---
+title: '1099'
+author: "Patrick"
+date: "2023-10-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(googlesheets4)
+library(janitor)
+library(RPublica) #https://www.r-project.org/nosvn/pandoc/RPublica.html
+library(curl)
+library(httr)
+library(jsonlite)
+
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+q = curl_escape("real estate board")
+
+state = "NY"
+
+base_url <- "https://projects.propublica.org/nonprofits/api/v2/search.json"
+
+url_enc <- URLencode(paste0(base_url,
+                            "?",
+                            "q=",
+                            q,
+                            "&state%5Bid%5D=", state))
+
+result <- GET(url_enc)
+
+search <- fromJSON(rawToChar(result$content))
+
+orgs <- search$organizations
+
+
+```
+
+
+```{r}
+
+chip <- "132617766"
+  
+rsa <- "132634120"
+
+rebny <- "131201480"
+
+
+
+
+
+org_url <- "https://projects.propublica.org/nonprofits/api/v2/organizations/" 
+
+ein <- rebny_id
+
+org_url_enc <- URLencode(paste0(org_url, ein, ".json"))
+
+org_result <- GET(org_url_enc)
+
+rawToChar(org_result$content)
+
+org_result <- fromJSON(content(org_result, as = "text"), flatten = TRUE)
+
+org <- org_result$organization
+org_filings_d <- org_result$filings_with_data
+
+```
+Field descriptions
+https://projects.propublica.org/nonprofits/api/#organization-object
+https://www.irs.gov/pub/irs-soi/12eofinextractdoc.xls
+
+This filing data doesn't have the schedule F though...
