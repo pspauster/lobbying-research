@@ -29,6 +29,8 @@ beneficial <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=benef
 
 ```
 
+also get RSA, Association of Realtors, CHIP
+
 
 ```{r}
 
@@ -45,14 +47,54 @@ homeowners <- read_csv(URLencode(
 ))
 
 combined <- read_csv(URLencode(
-  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC' OR beneficial_client_name='REAL ESTATE BOARD OF NEW YORK, INC.' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' &$LIMIT= 100000"))
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.;' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC;' OR beneficial_client_name='REAL ESTATE BOARD OF NEW YORK, INC.;' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' &$LIMIT= 100000"))
 
 
 ```
 
+```{r}
 
 
+expenses <- combined %>% 
+  group_by(form_submission_id) %>% 
+  summarize(compensation = max(compensation),
+            expenses_reium = max(reimbursed_expenses),
+            client = first(beneficial_client_name),
+            year = first(reporting_year)
+            )
 
+expenses_year_org_sum <- expenses %>% 
+  group_by(year, client) %>% 
+  summarize(total_compensation = sum(compensation),
+            total_expenses = sum(expenses_reium))
+
+```
+
+
+```{r}
+
+good_cause <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=focus_identifying_number = 'S305'&$limit=200000"
+))
+
+good_cause %>% pull(beneficial_client_name) %>% unique
+
+good_cause_spending <- good_cause %>% 
+  group_by(form_submission_id) %>% 
+  summarize(compensation = max(compensation),
+            expenses_reium = max(reimbursed_expenses),
+            expenses_total_item = sum(itemized_expenses),
+            client = first(beneficial_client_name)
+            )
+
+good_cause_sum <- good_cause_spending %>% 
+  group_by(client) %>% 
+  summarize(total_compensation = sum(compensation),
+            total_reium_expenses = sum(expenses_reium),
+            total_item_expenses = sum(expenses_total_item))
+
+
+```
 
 
 
