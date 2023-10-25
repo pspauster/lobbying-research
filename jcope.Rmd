@@ -60,13 +60,16 @@ expenses <- combined %>%
   summarize(compensation = max(compensation),
             expenses_reium = max(reimbursed_expenses),
             client = first(beneficial_client_name),
+            expenses_total_item = sum(itemized_expenses, na.rm = T),
+            total_item_expenses = sum(expenses_total_item),
             year = first(reporting_year)
             )
 
 expenses_year_org_sum <- expenses %>% 
   group_by(year, client) %>% 
   summarize(total_compensation = sum(compensation),
-            total_expenses = sum(expenses_reium))
+            total_reium_expenses = sum(expenses_reium),
+            total_item_expenses = sum(total_item_expenses))
 
 ```
 
