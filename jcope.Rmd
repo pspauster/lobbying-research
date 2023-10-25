@@ -18,7 +18,8 @@ library(RSocrata)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-https://data.ny.gov/Transparency/Disbursement-of-Public-Monies-Bi-Monthly-Report-Be/i574-v3dp
+https://data.ny.gov/Transparency/Lobbyist-Bi-Monthly-Reports-Beginning-2019/t9kf-dqbc
+https://data.ny.gov/api/views/t9kf-dqbc/files/0492a388-f728-41cd-bd61-b72c4cfd45fa?download=true&filename=COELIG_LobbyistBiMonthlyReports_DataDictionary.pdf
 ```{r}
 
 clients <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=contractual_client_name,COUNT(contractual_client_name)&$group=contractual_client_name&$LIMIT=100000")
@@ -57,11 +58,11 @@ combined <- read_csv(URLencode(
 
 expenses <- combined %>% 
   group_by(form_submission_id) %>% 
-  summarize(compensation = max(compensation),
+  summarize(client = first(beneficial_client_name),
+            compensation = max(compensation),
             expenses_reium = max(reimbursed_expenses),
-            client = first(beneficial_client_name),
+            non_lobbying_expense = max(lobbying_expenses_for_non),
             expenses_total_item = sum(itemized_expenses, na.rm = T),
-            total_item_expenses = sum(expenses_total_item),
             year = first(reporting_year)
             )
 
@@ -69,7 +70,17 @@ expenses_year_org_sum <- expenses %>%
   group_by(year, client) %>% 
   summarize(total_compensation = sum(compensation),
             total_reium_expenses = sum(expenses_reium),
-            total_item_expenses = sum(total_item_expenses))
+            total_nonlobb_expenses = sum(non_lobbying_expense),
+            total_item_expenses = sum(expenses_total_item)
+            )
+
+```
+
+```{r}
+
+combined %>% count(focus_identifying_number)
+
+combined %>% filter(str_detect(focus_identifying_number, "S305|good cause|S3082")) %>% count(focus_identifying_number)
 
 ```
 
@@ -87,6 +98,7 @@ good_cause_spending <- good_cause %>%
   summarize(compensation = max(compensation),
             expenses_reium = max(reimbursed_expenses),
             expenses_total_item = sum(itemized_expenses),
+            non_lobbying_expense = max(lobbying_expenses_for_non),
             client = first(beneficial_client_name)
             )
 
@@ -94,6 +106,7 @@ good_cause_sum <- good_cause_spending %>%
   group_by(client) %>% 
   summarize(total_compensation = sum(compensation),
             total_reium_expenses = sum(expenses_reium),
+            total_nonlobb_expenses = sum(non_lobbying_expense),
             total_item_expenses = sum(expenses_total_item))
 
 
