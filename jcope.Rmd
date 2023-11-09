@@ -28,6 +28,11 @@ lobbyists <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=princi
 
 beneficial <- read_csv("https://data.ny.gov/resource/t9kf-dqbc.csv?$select=beneficial_client_name,COUNT(beneficial_client_name)&$group=beneficial_client_name&$LIMIT=100000")
 
+beneficial_client_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.;' , 'Homeowners for an Affordable New York LLC;' , 'REAL ESTATE BOARD OF NEW YORK, INC.;' , 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.;' , 'RENT STABILIZATION ASSOCIATION OF NYC, INC.;', 'ASSOCIATION OF REALTORS (NYS);')
+
+principal_lobbyist_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.','Homeowners for an Affordable New York LLC','REAL ESTATE BOARD OF NEW YORK, INC.','COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.' , 'RENT STABILIZATION ASSOCIATION OF NYC, INC.', "ASSOCIATION OF REALTORS (NYS)")
+
+
 ```
 
 also get RSA, Association of Realtors, CHIP
@@ -48,10 +53,16 @@ homeowners <- read_csv(URLencode(
 ))
 
 combined <- read_csv(URLencode(
-  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.;' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC;' OR beneficial_client_name='REAL ESTATE BOARD OF NEW YORK, INC.;' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' &$LIMIT= 100000"))
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.;' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC;' OR beneficial_client_name = 'REAL ESTATE BOARD OF NEW YORK, INC.;' OR beneficial_client_name = 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.;' OR beneficial_client_name = 'RENT STABILIZATION ASSOCIATION OF NYC, INC.;' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' OR principal_lobbyist_name = 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.' OR principal_lobbyist_name = 'RENT STABILIZATION ASSOCIATION OF NYC, INC.' &$LIMIT= 100000"))
 
 
 ```
+
+```{r}
+combined_clean <- combined %>% 
+  separate(unique_id, sep = "-", into = as.character(1:11), remove = F)
+```
+
 
 ```{r}
 
@@ -74,13 +85,50 @@ expenses_year_org_sum <- expenses %>%
             total_item_expenses = sum(expenses_total_item)
             )
 
+
+
+
+expenses_year_org_sum %>% ungroup() %>%   summarize(
+            total_compensation = sum(total_compensation),
+            total_reium_expenses = sum(total_reium_expenses),
+            total_nonlobb_expenses = sum(total_nonlobb_expenses),
+            total_item_expenses = sum(total_item_expenses)
+            )
+
+expenses_year_org_sum %>% ungroup() %>% group_by(client) %>%    summarize(
+            total_compensation = sum(total_compensation),
+            total_reium_expenses = sum(total_reium_expenses),
+            total_nonlobb_expenses = sum(total_nonlobb_expenses),
+            total_item_expenses = sum(total_item_expenses)
+            )
+  
+  expenses_year_org_sum %>%  summarize(
+            total_compensation = sum(total_compensation),
+            total_reium_expenses = sum(total_reium_expenses),
+            total_nonlobb_expenses = sum(total_nonlobb_expenses),
+            total_item_expenses = sum(total_item_expenses)
+            )
+  
+
 ```
+
+
 
 ```{r}
 
-combined %>% count(focus_identifying_number)
+combined %>% group_by(focus_identifying_number) %>% summarize(n= n(), dollars = sum(itemized_expenses, na.rm = T)) %>% arrange(desc(dollars))
 
-combined %>% filter(str_detect(focus_identifying_number, "S305|good cause|S3082")) %>% count(focus_identifying_number)
+combined %>% group_by(expense_purpose) %>% summarize(n= n(), dollars = sum(itemized_expenses, na.rm = T)) %>% arrange(desc(dollars))
+
+combined %>% group_by(party_name) %>% summarize(n= n(), dollars = sum(itemized_expenses, na.rm = T)) %>% arrange(desc(n))
+
+combined %>% group_by(person_lobbied) %>% summarize(n= n(), dollars = sum(itemized_expenses, na.rm = T)) %>% arrange(desc(n))
+
+
+combined %>% group_by(lobbying_subjects) %>% summarize(n= n()) %>% arrange(desc(n))
+
+
+combined %>% filter(str_detect(focus_identifying_number, "S305|good cause|S3082|A5573")) %>% count(focus_identifying_number)
 
 ```
 
@@ -88,10 +136,13 @@ combined %>% filter(str_detect(focus_identifying_number, "S305|good cause|S3082"
 ```{r}
 
 good_cause <- read_csv(URLencode(
-  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=focus_identifying_number = 'S305'&$limit=200000"
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=focus_identifying_number = 'S305' OR focus_identifying_number = 'Intended introduction regarding good cause eviction' OR focus_identifying_number = 'S3082' OR focus_identifying_number = 'A5573'&$limit=200000"
 ))
 
 good_cause %>% pull(beneficial_client_name) %>% unique
+
+good_cause %>% filter(beneficial_client_name %in% beneficial_client_names) %>% count(person_lobbied) %>% arrange(desc(n))
+good_cause %>% filter(beneficial_client_name %in% beneficial_client_names) %>% count(party_name) %>% arrange(desc(n))
 
 good_cause_spending <- good_cause %>% 
   group_by(form_submission_id) %>% 
@@ -113,6 +164,14 @@ good_cause_sum <- good_cause_spending %>%
 ```
 
 
+```{r}
+
+rent_reg <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=focus_identifying_number = 'rent regulation' OR focus_identifying_number = 'Rent Guidelines Board' &$limit=200000"
+))
+
+
+```
 
 
 
