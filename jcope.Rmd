@@ -52,6 +52,10 @@ homeowners <- read_csv(URLencode(
   "https://data.ny.gov/resource/t9kf-dqbc.csv?contractual_client_name=Homeowners for an Affordable New York LLC&$limit=20000"
 ))
 
+NYSAR <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?contractual_client_name=ASSOCIATION OF REALTORS (NYS)&$limit=200000"
+))
+
 combined <- read_csv(URLencode(
   "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.;' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC;' OR beneficial_client_name = 'REAL ESTATE BOARD OF NEW YORK, INC.;' OR beneficial_client_name = 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.;' OR beneficial_client_name = 'RENT STABILIZATION ASSOCIATION OF NYC, INC.;' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' OR principal_lobbyist_name = 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.' OR principal_lobbyist_name = 'RENT STABILIZATION ASSOCIATION OF NYC, INC.' &$LIMIT= 100000"))
 
