@@ -1,0 +1,90 @@
+---
+title: "Real Estate Lobbying Spending"
+author: "Patrick Spauster"
+date: '2024-01-21'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(googlesheets4)
+library(janitor)
+library(RPublica) #https://www.r-project.org/nosvn/pandoc/RPublica.html
+library(curl)
+library(httr)
+library(jsonlite)
+library(RSocrata)
+library(DT)
+
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+# Organizations Investigated
+
+-   Real Estate Board of New York, Inc
+-   Homeowners for an Affordable New York LLC
+-   Taxpayers for an Affordable NY LLC
+-   Community Housing Improvement Program (CHIP)
+-   Rent Stabilization Association of NYC, INC
+-   NYS Association of Realtors
+
+```{r, include=FALSE}
+beneficial_client_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.;' , 'Homeowners for an Affordable New York LLC;' , 'REAL ESTATE BOARD OF NEW YORK, INC.;' , 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.;' , 'RENT STABILIZATION ASSOCIATION OF NYC, INC.;', 'ASSOCIATION OF REALTORS (NYS);')
+
+principal_lobbyist_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.','Homeowners for an Affordable New York LLC','REAL ESTATE BOARD OF NEW YORK, INC.','COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.' , 'RENT STABILIZATION ASSOCIATION OF NYC, INC.', "ASSOCIATION OF REALTORS (NYS)")
+
+```
+
+There are three different types of data available from the state lobbying records.
+
+1.  Compensation for lobbyists
+2.  Expenses and spending by lobbyists
+3.  Lobbying activities and targets
+
+```{r include=F}
+combined <- read_csv(URLencode(
+  "https://data.ny.gov/resource/t9kf-dqbc.csv?$where=beneficial_client_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.;' OR beneficial_client_name = 'Homeowners for an Affordable New York LLC;' OR beneficial_client_name = 'REAL ESTATE BOARD OF NEW YORK, INC.;' OR beneficial_client_name = 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.;' OR beneficial_client_name = 'RENT STABILIZATION ASSOCIATION OF NYC, INC.;' OR principal_lobbyist_name = 'TAXPAYERS FOR AN AFFORDABLE NY, INC.' OR principal_lobbyist_name = 'Homeowners for an Affordable New York LLC' OR principal_lobbyist_name='REAL ESTATE BOARD OF NEW YORK, INC.' OR principal_lobbyist_name = 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.' OR principal_lobbyist_name = 'RENT STABILIZATION ASSOCIATION OF NYC, INC.' &$LIMIT= 100000"))
+
+compensation <- combined %>% 
+  select(form_submission_id:compensation, unique_id) %>% 
+  group_by(form_submission_id) %>% 
+  summarize_all(first)
+
+expenses <- combined %>% 
+  select(form_submission_id, reimbursed_expenses:coalition_contribution_expense, unique_id) %>% 
+  mutate(expense_id = map_chr(str_split(unique_id, "-"), 3))
+
+itemized_expenses <- filter(expenses, expense_id != "0")
+
+other_expenses <- filter(expenses, expense_id == "0")
+
+lobbying_activities <- combined %>% 
+  select(form_submission_id, lobbying_subjects:unique_id)
+```
+
+# 1.    Compensation
+
+Total Compensation spending by all parties since 2019
+
+```{r}
+compensation %>% 
+  group_by(reporting_year) %>% 
+  summarize(total_compensation = sum(compensation)) %>% 
+  ggplot()+
+  geom_line(mapping = aes(x = reporting_year, y = total_compensation))
+```
+
+Lobbying compensation over time by organization
+```{r}
+compensation %>% 
+  group_by(reporting_year, beneficial_client_name) %>% 
+  summarize(total_compensation = sum(compensation)) %>% 
+  arrange(beneficial_client_name) %>% 
+  pivot_wider(names_from = reporting_year, values_from = total_compensation) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  datatable()
+  
+```
+
+
