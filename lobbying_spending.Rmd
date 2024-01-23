@@ -55,7 +55,9 @@ expenses <- combined %>%
   select(form_submission_id, reporting_year, beneficial_client_name, reimbursed_expenses:coalition_contribution_expense, unique_id) %>% 
   mutate(expense_id = map_chr(str_split(unique_id, "-"), 3))
 
-itemized_expenses <- filter(expenses, expense_id != "0")
+itemized_expenses <- filter(expenses, expense_id != "0") %>% 
+  group_by(expense_id) %>% 
+  summarize_all(first)
 
 other_expenses <- filter(expenses, expense_id == "0")
 
@@ -133,7 +135,7 @@ itemized_expenses %>%
 
 ```{r}
 
-expenses %>% 
+itemized_expenses %>% 
   group_by(expense_purpose) %>% 
   summarize(
     number_of_expenses = n(),
@@ -221,7 +223,7 @@ compensation %>%
 ## In periods where Real Estate Lobbied against good cause, they spent this much on expenses
 
 ```{r}
-expenses %>%
+itemized_expenses %>%
   filter(form_submission_id %in% gc_filings) %>% 
   group_by(expense_purpose) %>% 
   summarize(
