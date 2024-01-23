@@ -17,7 +17,7 @@ library(RSocrata)
 library(DT)
 
 
-knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
 ```
 
 # Organizations Investigated
@@ -52,7 +52,7 @@ compensation <- combined %>%
   summarize_all(first)
 
 expenses <- combined %>% 
-  select(form_submission_id, reimbursed_expenses:coalition_contribution_expense, unique_id) %>% 
+  select(form_submission_id, reporting_year, beneficial_client_name, reimbursed_expenses:coalition_contribution_expense, unique_id) %>% 
   mutate(expense_id = map_chr(str_split(unique_id, "-"), 3))
 
 itemized_expenses <- filter(expenses, expense_id != "0")
@@ -60,12 +60,12 @@ itemized_expenses <- filter(expenses, expense_id != "0")
 other_expenses <- filter(expenses, expense_id == "0")
 
 lobbying_activities <- combined %>% 
-  select(form_submission_id, lobbying_subjects:unique_id)
+  select(form_submission_id, reporting_year, beneficial_client_name, lobbying_subjects:unique_id)
 ```
 
 # 1.    Compensation
 
-Total Compensation spending by all parties since 2019
+## Total Compensation spending by all parties since 2019
 
 ```{r}
 compensation %>% 
@@ -75,7 +75,7 @@ compensation %>%
   geom_line(mapping = aes(x = reporting_year, y = total_compensation))
 ```
 
-Lobbying compensation over time by organization
+## Lobbying compensation over time by organization
 ```{r}
 compensation %>% 
   group_by(reporting_year, beneficial_client_name) %>% 
@@ -87,4 +87,182 @@ compensation %>%
   
 ```
 
+## Top Lobbying groups by Amount Compensated
+
+```{r}
+compensation %>% 
+  mutate(principal_lobbyist_name = if_else(principal_lobbyist_name == "99 SOLUTIONS, LLC", "99 SOLUTIONS LLC.", principal_lobbyist_name)) %>% 
+  group_by(principal_lobbyist_name) %>% 
+  summarize(total_compensation = sum(compensation)) %>% 
+  arrange(desc(total_compensation)) %>% 
+  adorn_totals() %>% 
+  datatable()
+
+```
+
+## Top Lobbyists by Amount Compensated
+
+```{r}
+#if time come back and parse the names by splitting column and then standardizing case
+
+compensation %>% 
+  group_by(individual_lobbyist_name) %>% 
+  summarize(total_compensation = sum(compensation)) %>% 
+  arrange(desc(total_compensation)) %>% 
+  adorn_totals() %>% 
+  datatable()
+
+```
+
+# 2.    Expenses
+
+## Total itemized expenses by year
+```{r}
+
+itemized_expenses %>% 
+  group_by(reporting_year, beneficial_client_name) %>% 
+  summarize(total_expenses = sum(itemized_expenses)) %>% 
+  arrange(beneficial_client_name) %>% 
+  pivot_wider(names_from = reporting_year, values_from = total_expenses) %>% 
+  adorn_totals(where = c("row", "col")) %>% 
+  datatable()
+
+```
+
+## Types of expenses and their frequency
+
+```{r}
+
+expenses %>% 
+  group_by(expense_purpose) %>% 
+  summarize(
+    number_of_expenses = n(),
+    total_expenses = sum(itemized_expenses)
+    ) %>% 
+  arrange(desc(total_expenses)) %>% 
+  adorn_totals() %>% 
+  datatable()
+
+```
+
+# 3.    Targets of Lobbying
+
+## Most targeted Issues
+
+```{r}
+lobbying_activities %>% group_by(lobbying_subjects) %>% summarize(contacts= n()) %>% arrange(desc(contacts)) %>% datatable()
+```
+
+## Most Targeted Laws
+
+```{r}
+
+lobbying_activities %>%
+  mutate(bill = case_when(
+    focus_identifying_number == "A4740-A" ~ "Green Roof Tax Abatement",
+    focus_identifying_number == "S5554-A" ~ "Green Roof Tax Abatement",
+    focus_identifying_number == "A9006-A" ~ "Education, Labor, Housing and family assistance budget",
+    focus_identifying_number == "S3082" ~ "Good Cause",
+    focus_identifying_number == "A5573" ~ "Good Cause",
+    focus_identifying_number == 'A4454' ~ "Good Cause",
+    focus_identifying_number == "S8006-A" ~ "Education, Labor, Housing and family assistance budget",
+    focus_identifying_number == "S2892" ~"Good Cause",
+    focus_identifying_number == "A3006" ~ "Education, Labor, Housing and family assistance budget",
+    focus_identifying_number == "A2008C" ~ "Transportation, economic development, environmental conservation budget",
+    focus_identifying_number == "S1508" ~ "Transportation, economic development, environmental conservation budget",
+    focus_identifying_number == "A2008" ~ "Transportation, economic development, environmental conservation budget",
+    focus_identifying_number == "S1947" ~ "Hours, Wages, and supplements in contracts for public work",
+    focus_identifying_number == "A1261" ~ "Hours, Wages, and supplements in contracts for public work",
+    focus_identifying_number == "A1915" ~ "Prevailing wage in large city developments",
+    focus_identifying_number == "S305" ~ "Good Cause",
+    focus_identifying_number == 'Intended introduction regarding good cause eviction' ~ "Good Cause",
+    T ~ focus_identifying_number
+  )) %>% 
+  group_by(bill) %>%
+  summarize(contacts= n()) %>% arrange(desc(contacts))%>%
+  head(10) %>% 
+  datatable()
+
+```
+
+## Most targeted people
+
+```{r}
+lobbying_activities %>%
+  group_by(party_name) %>%
+  summarize(contacts= n()) %>% arrange(desc(contacts))%>%
+  #head(10) %>% 
+  datatable()
+
+
+```
+
+# Focus: Good Cause
+
+## In periods where Real Estate Lobbied against good cause, they compensated lobbyists
+
+```{r}
+good_cause_codes <- c('S305','Intended introduction regarding good cause eviction', 'S3082', 'A5573', 'S2892', 'A4454')
+
+gc_filings <- combined %>% filter(focus_identifying_number %in% good_cause_codes) %>%  pull(form_submission_id)
+```
+
+```{r}
+compensation %>% 
+  filter(form_submission_id %in% gc_filings) %>% 
+  group_by(beneficial_client_name) %>% 
+  summarize(total_compensation = sum(compensation)) %>% 
+  arrange(beneficial_client_name) %>% 
+  adorn_totals() %>% 
+  datatable()
+
+
+```
+## In periods where Real Estate Lobbied against good cause, they spent this much on expenses
+
+```{r}
+expenses %>%
+  filter(form_submission_id %in% gc_filings) %>% 
+  group_by(expense_purpose) %>% 
+  summarize(
+    number_of_expenses = n(),
+    total_expenses = sum(itemized_expenses)
+    ) %>% 
+  arrange(desc(total_expenses)) %>% 
+  adorn_totals() %>% 
+  datatable()
+
+
+```
+
+## They targeted the following people most often when lobbying around good cause
+
+```{r}
+
+lobbying_activities %>% 
+  filter(focus_identifying_number %in% good_cause_codes) %>% 
+  group_by(party_name) %>%
+  summarize(contacts= n()) %>% arrange(desc(contacts))%>%
+  #head(10) %>% 
+  datatable()
+
+```
+# Browse all the data
+
+## Compensation
+```{r}
+
+compensation %>% datatable()
+
+```
+
+## Expenses
+```{r}
+itemized_expenses %>% datatable()
+```
+
+## Lobbying contacts
+```{r}
+lobbying_activities %>% datatable()
+```
 
