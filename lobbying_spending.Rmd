@@ -17,7 +17,10 @@ library(RSocrata)
 library(DT)
 
 
+
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+
+options(scipen = 999)
 ```
 
 # Organizations Investigated
@@ -146,6 +149,49 @@ itemized_expenses %>%
   datatable()
 
 ```
+# Types of expenses and their frequency broken out by larger category
+```{r}
+itemized_expenses %>% 
+  separate(expense_purpose, sep = " – ", into = c("expense_category", "expense_category_detail")) %>% 
+  mutate(expense_category = case_when(
+    is.na(expense_category) ~ "Unknown",
+    str_detect(expense_category, "Consulting")~"Consulting",
+    T ~ expense_category
+  )) %>% 
+  group_by(expense_category) %>% 
+  summarize(
+    number_of_expenses = n(),
+    total_expenses = sum(itemized_expenses)
+    ) %>% 
+  arrange(desc(total_expenses)) %>% 
+  adorn_totals() %>% 
+  datatable()
+```
+```{r}
+itemized_expenses %>% 
+  separate(expense_purpose, sep = " – ", into = c("expense_category", "expense_category_detail")) %>% 
+  mutate(expense_category = case_when(
+    is.na(expense_category) ~ "Unknown",
+    str_detect(expense_category, "Consulting")~"Consulting",
+    T ~ expense_category
+  )) %>% 
+  group_by(expense_category) %>% 
+  summarize(
+    number_of_expenses = n(),
+    values = sum(itemized_expenses),
+    ) %>% 
+  ggplot()+
+  geom_col(mapping = aes(x = "", y = values, fill = expense_category))+
+  theme_minimal()+
+  scale_y_continuous(labels = scales::comma_format())+
+  labs(title = "How Real Estate Spent Money",
+       x = "",
+       y = "$"
+       )
+
+```
+
+
 
 # 3.    Targets of Lobbying
 
@@ -182,7 +228,8 @@ lobbying_activities %>%
   )) %>% 
   group_by(bill) %>%
   summarize(contacts= n()) %>% arrange(desc(contacts))%>%
-  head(10) %>% 
+  adorn_totals() %>% 
+  filter(bill == "Total" | row_number() <= 10) %>% 
   datatable()
 
 ```
@@ -191,7 +238,31 @@ lobbying_activities %>%
 
 ```{r}
 lobbying_activities %>%
-  group_by(party_name) %>%
+  mutate(
+         party_name_clean = case_when(
+    str_detect(party_name,"Kavanagh")~"Brian Kavanagh",
+    str_detect(party_name,"Heastie")~"Carl Heastie",
+    str_detect(party_name,"Skoufis")~"James Skoufis",
+    str_detect(party_name,"Cymbrowitz") ~ "Steven Cymbrowitz",
+    str_detect(party_name,"Mannion") ~ "John Mannion",
+    str_detect(party_name,"Adams") ~ "Eric Adams",
+    str_detect(party_name,"Johnson") ~ "Corey Johnson",
+    str_detect(party_name,"Kaplan") ~ "Anna Kaplan",
+    str_detect(party_name,"Kaminsky") ~ "Todd Kaminsky",
+    str_detect(party_name,"Stewart-Cousins") ~ "Andrea Stewart-Cousins",
+    str_detect(party_name,"Comrie") ~ "Leroy Comrie",
+    str_detect(party_name,"Hochul") ~ "Kathy Hochul", #double check this one
+    str_detect(party_name,"Executive Chamber") ~ "Executive Chamber",
+    
+    party_name == "New York State Senate" ~ "General",
+    party_name =="New York Assembly" ~ "General",
+    party_name =="NYC Council Central Staff" ~ "General",
+    party_name =="Homes and Community Renewal (HCR)" ~ "General",
+    party_name =="NYC Department of City Planning (DCP)" ~ "General",
+    
+    T ~ str_remove_all(party_name, "Senator |Assemblymember |Assembly member ")
+  )) %>% 
+  group_by(party_name_clean) %>%
   summarize(contacts= n()) %>% arrange(desc(contacts))%>%
   #head(10) %>% 
   datatable()
@@ -236,7 +307,20 @@ itemized_expenses %>%
 
 
 ```
-
+## Types of expenses and their frequency broken out by larger category
+```{r}
+itemized_expenses %>% 
+  filter(form_submission_id %in% gc_filings) %>% 
+  separate(expense_purpose, sep = " – ", into = c("expense_category", "expense_category_detail")) %>% 
+  group_by(expense_category) %>% 
+  summarize(
+    number_of_expenses = n(),
+    total_expenses = sum(itemized_expenses)
+    ) %>% 
+  arrange(desc(total_expenses)) %>% 
+  adorn_totals() %>% 
+  datatable()
+```
 ## They targeted the following people most often when lobbying around good cause
 
 ```{r}
