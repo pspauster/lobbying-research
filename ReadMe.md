@@ -1,5 +1,6 @@
 Pulling Lobbying data from JCOPE, Campaign Finance Disclosures, and 990s
 
+
 Data Sources:
 
 - Campaign Finance - https://www.elections.ny.gov/CampaignFinance.html 
