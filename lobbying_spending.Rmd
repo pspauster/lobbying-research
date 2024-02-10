@@ -156,6 +156,7 @@ itemized_expenses %>%
   mutate(expense_category = case_when(
     is.na(expense_category) ~ "Unknown",
     str_detect(expense_category, "Consulting")~"Consulting",
+    str_detect(expense_category, "Social Media")~"Advertising",
     T ~ expense_category
   )) %>% 
   group_by(expense_category) %>% 
@@ -173,6 +174,7 @@ itemized_expenses %>%
   mutate(expense_category = case_when(
     is.na(expense_category) ~ "Unknown",
     str_detect(expense_category, "Consulting")~"Consulting",
+    str_detect(expense_category, "Social Media")~"Advertising",
     T ~ expense_category
   )) %>% 
   group_by(expense_category) %>% 
@@ -237,7 +239,7 @@ lobbying_activities %>%
 ## Most targeted people
 
 ```{r}
-lobbying_activities %>%
+parties_sum_clean <- lobbying_activities %>%
   mutate(
          party_name_clean = case_when(
     str_detect(party_name,"Kavanagh")~"Brian Kavanagh",
@@ -253,22 +255,60 @@ lobbying_activities %>%
     str_detect(party_name,"Comrie") ~ "Leroy Comrie",
     str_detect(party_name,"Hochul") ~ "Kathy Hochul", #double check this one
     str_detect(party_name,"Executive Chamber") ~ "Executive Chamber",
+    str_detect(party_name,"Program and Counsel Staff") ~ "Legislative Leadership",
     
-    party_name == "New York State Senate" ~ "General",
+    party_name =="New York State Senate" ~ "General",
     party_name =="New York Assembly" ~ "General",
     party_name =="NYC Council Central Staff" ~ "General",
     party_name =="Homes and Community Renewal (HCR)" ~ "General",
     party_name =="NYC Department of City Planning (DCP)" ~ "General",
+    party_name =="NYC Department of Housing Preservation and Development (HPD)" ~ "General",
+    party_name =="Division of the Budget" ~ "General",
+    party_name =="NYC Department of Buildings (DOB)" ~ "General",
     
     T ~ str_remove_all(party_name, "Senator |Assemblymember |Assembly member ")
-  )) %>% 
+  ))
+
+ parties_sum_clean %>% 
   group_by(party_name_clean) %>%
   summarize(contacts= n()) %>% arrange(desc(contacts))%>%
+  filter(!party_name_clean %in% c("General", "Executive Chamber", "Legislative Leadership")) %>% 
   #head(10) %>% 
   datatable()
 
 
 ```
+## Most targeted bodies
+```{r}
+
+bodies <- c("New York State Senate",
+"New York Assembly",
+"NYC Council Central Staff",
+"Homes and Community Renewal (HCR)",
+"NYC Department of City Planning (DCP)",
+"NYC Department of Housing Preservation and Development (HPD)",
+"Division of the Budget",
+"NYC Department of Buildings (DOB)")
+
+ parties_sum_clean %>% 
+  filter(party_name %in% bodies|party_name_clean %in% c("Legislative Leadership", "Executive Chamber")) %>% 
+   mutate(party_name = case_when(
+    str_detect(party_name,"Executive Chamber") ~ "Executive Chamber",
+    str_detect(party_name,"Program and Counsel Staff") ~ "Legislative Leadership",
+    T ~ party_name
+   )) %>% 
+  group_by(party_name) %>%
+  summarize(contacts= n()) %>% arrange(desc(contacts))%>%
+  #head(10) %>% 
+  datatable()
+
+```
+
+# Upstate/Downstate
+
+
+
+
 
 # Focus: Good Cause
 
