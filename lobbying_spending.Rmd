@@ -183,13 +183,16 @@ itemized_expenses %>%
     values = sum(itemized_expenses),
     ) %>% 
   ggplot()+
-  geom_col(mapping = aes(x = "", y = values, fill = expense_category))+
-  theme_minimal()+
-  scale_y_continuous(labels = scales::comma_format())+
-  labs(title = "How Real Estate Spent Money",
-       x = "",
-       y = "$"
-       )
+  geom_bar(mapping = aes(x = "", y = values, fill = expense_category), stat = "identity")+
+  coord_polar("y", start = 0)+
+  scale_fill_brewer("Blues") +
+  theme_minimal() +
+  theme(axis.text.x=element_blank())
+# +
+#   geom_text(aes(y = values/3 + c(0, cumsum(values)[-length(values)]), 
+#                 label = scales::percent(values/100)), size=5)
+
+ggsave("pie.svg")
 
 ```
 
@@ -247,7 +250,7 @@ parties_sum_clean <- lobbying_activities %>%
     str_detect(party_name,"Skoufis")~"James Skoufis",
     str_detect(party_name,"Cymbrowitz") ~ "Steven Cymbrowitz",
     str_detect(party_name,"Mannion") ~ "John Mannion",
-    str_detect(party_name,"Adams") ~ "Eric Adams",
+    #str_detect(party_name,"Adams") ~ "Eric Adams",
     str_detect(party_name,"Johnson") ~ "Corey Johnson",
     str_detect(party_name,"Kaplan") ~ "Anna Kaplan",
     str_detect(party_name,"Kaminsky") ~ "Todd Kaminsky",
