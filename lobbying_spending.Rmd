@@ -1,9 +1,11 @@
 ---
-title: "Lobbying Spending"
+title: "Real Estate Lobby's Open Door in Albany"
 output:
   html_document:
+    theme: journal
     toc: true
     toc_depth: 2
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -17,28 +19,26 @@ library(jsonlite)
 library(RSocrata)
 library(DT)
 library(downloadthis)
+library(scales)
 
 
 
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = F)
 
 options(scipen = 999)
 ```
 
-From 2019 to 2023, Real Estate spent millions of dollars on lobbying in Albany. This data analysis digs into the organizations who spent money in Albany over the period, who they paid, and where there money went.
+From 2019 to 2023, the Real Estate industry spent more than \$13 millions dollars on lobbying in Albany. This data analysis digs into the organizations who spent money in Albany over the period, who they paid, and where the money went. 
 
-It analyzes data from from the New York State Commission on Ethics and Lobbying in Government via [NY Open Data](https://data.ny.gov/Transparency/Lobbyist-Bi-Monthly-Reports-Beginning-2019/t9kf-dqbc/about_data)
+Using data from the New York State Commission on Ethics and Lobbying in Government via [NY Open Data](https://data.ny.gov/Transparency/Lobbyist-Bi-Monthly-Reports-Beginning-2019/t9kf-dqbc/about_data), this analysis focuses on six of the top lobbying clients in the state: the Real Estate Board of New York, Inc, Homeowners for an Affordable New York LLC, Taxpayers for an Affordable NY LLC, Community Housing Improvement Program (CHIP), Rent Stabilization Association of NYC, INC, and the NYS Association of Realtors. 
 
-# Organizations Investigated
+There are three different types of data available from the state lobbying records.
 
-The analysis focuses on the following Real Estate organizations which are some of the top spending lobbying clients in the state.
+-   Compensation for lobbyists
 
--   Real Estate Board of New York, Inc
--   Homeowners for an Affordable New York LLC
--   Taxpayers for an Affordable NY LLC
--   Community Housing Improvement Program (CHIP)
--   Rent Stabilization Association of NYC, INC
--   NYS Association of Realtors
+-   Expenses and spending by lobbyists
+
+-   Lobbying activities and targets
 
 ```{r, include=FALSE}
 beneficial_client_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.;' , 'Homeowners for an Affordable New York LLC;' , 'REAL ESTATE BOARD OF NEW YORK, INC.;' , 'COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.;' , 'RENT STABILIZATION ASSOCIATION OF NYC, INC.;', 'ASSOCIATION OF REALTORS (NYS);')
@@ -46,12 +46,6 @@ beneficial_client_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.;' , 'Homeowne
 principal_lobbyist_names <- c('TAXPAYERS FOR AN AFFORDABLE NY, INC.','Homeowners for an Affordable New York LLC','REAL ESTATE BOARD OF NEW YORK, INC.','COMMUNITY HOUSING IMPROVEMENT PROGRAM, INC.' , 'RENT STABILIZATION ASSOCIATION OF NYC, INC.', "ASSOCIATION OF REALTORS (NYS)")
 
 ```
-
-There are three different types of data available from the state lobbying records.
-
-1.  Compensation for lobbyists
-2.  Expenses and spending by lobbyists
-3.  Lobbying activities and targets
 
 ```{r include=F}
 combined <- read_csv(URLencode(
@@ -78,9 +72,9 @@ lobbying_activities <- combined %>%
 
 # 1. Compensation
 
-Compensation data tells us how much a client paid a lobbyist during a given period. By checking the amount that real estate clients paid their lobbyists every bi-monthly period, we can get an idea of how much they are spending on lobbying.
+Compensation data tells us how much real estate clients paid their lobbyists during each bi-monthly reporting period.
 
-## Total Compensation spending by all parties since 2019
+## Total Compensation Spending By Real Estate Organizations Since 2019
 
 ```{r}
 compensation %>% 
@@ -88,13 +82,15 @@ compensation %>%
   summarize(total_compensation = sum(compensation)) %>% 
   ggplot()+
   geom_line(mapping = aes(x = reporting_year, y = total_compensation))+
-  scale_y_continuous(labels = scales::comma)
+  scale_y_continuous(labels = scales::comma)+
+  labs(y = "Dollars ($)",
+       x = "Year")
 
 ```
 
-The biggest spender was the Real Estate Board of New York, who spent over 3 million on lobbying in the past five years. Homeowners for an affordable New York, formed in 2022, spent even more per year - averaging over a million dollars in lobbying compensation a year between 2022 and 2023.
+The biggest spender was the Real Estate Board of New York, who spent over \$3 million on lobbying in the past five years. Homeowners for an Affordable New York, formed in 2022, spent even more per year - averaging over a million dollars in lobbying compensation a year between 2022 and 2023.
 
-## Lobbying compensation over time by organization
+## Lobbying Compensation Over Time by Organization
 
 ```{r}
 compensation %>% 
@@ -103,13 +99,14 @@ compensation %>%
   arrange(beneficial_client_name) %>% 
   pivot_wider(names_from = reporting_year, values_from = total_compensation) %>% 
   adorn_totals(where = c("row", "col")) %>% 
-  datatable()
+  datatable() %>% 
+  formatCurrency(columns = 2:7, digits = 0)
   
 ```
 
-Sometimes real estate registered as their own lobbyist. But more often, they used a lobbying company. Fontas advisors and Greenberg Traurig were paid the most by real estate in the past five years.
+Sometimes real estate registered as their own lobbyist. But more often, they used a lobbying firm. Fontas Advisors and Greenberg Traurig were paid the most by real estate in the past five years.
 
-## Top Lobbying groups by Amount Compensated
+## Top Lobbying Groups by Amount Compensated
 
 ```{r}
 compensation %>% 
@@ -118,17 +115,16 @@ compensation %>%
   summarize(total_compensation = sum(compensation)) %>% 
   arrange(desc(total_compensation)) %>% 
   adorn_totals() %>% 
-  datatable()
+  datatable() %>% 
+  formatCurrency(columns = 2, digits = 0)
 
 ```
 
 # 2. Expenses
 
-Lobbying groups also spent millions on on particular lobbying expenses on behalf of clients, like advertising and advocacy.
+Lobbying groups also spend millions on particular lobbying expenses on behalf of clients, like advertising and advocacy. Real Estate clients spent an additional \$5 million over the five year period from 2019 to 2023.
 
-Real Estate clients spent \$5 million over five years
-
-## Total itemized expenses by year
+## Total Expenses by Year
 
 ```{r}
 
@@ -138,13 +134,14 @@ itemized_expenses %>%
   arrange(beneficial_client_name) %>% 
   pivot_wider(names_from = reporting_year, values_from = total_expenses) %>% 
   adorn_totals(where = c("row", "col")) %>% 
-  datatable()
+  datatable()%>% 
+  formatCurrency(columns = 2:6, digits = 0)
 
 ```
 
-The majority of those expenses were advertising. They also spent money on consultants and advocacy - which could be work on legislative tracking, grassroots advocacy, or phone banking
+The majority of those expenses were advertising. Real Estate also spent money on consultants and advocacy - which could include legislative tracking, grassroots advocacy, or phone banking.
 
-# Types of expenses and their frequency
+## How Real Estate Spent Money to Influence Policy
 
 ```{r}
 itemized_expenses %>% 
@@ -162,11 +159,13 @@ itemized_expenses %>%
     ) %>% 
   arrange(desc(total_expenses)) %>% 
   adorn_totals() %>% 
-  datatable()
+  datatable()%>% 
+  formatCurrency(columns = 3, digits = 0)
 ```
 
 ```{r}
-itemized_expenses %>% 
+
+df <- itemized_expenses %>% 
   separate(expense_purpose, sep = " – ", into = c("expense_category", "expense_category_detail")) %>% 
   mutate(expense_category = case_when(
     is.na(expense_category) ~ "Unknown",
@@ -179,16 +178,22 @@ itemized_expenses %>%
     number_of_expenses = n(),
     values = sum(itemized_expenses),
     ) %>% 
-  ggplot()+
-  geom_bar(mapping = aes(x = "", y = values, fill = expense_category), stat = "identity")+
-  coord_polar("y", start = 0)+
-  scale_fill_brewer("Blues") +
+  mutate(percentage = values / sum(values) * 100)
+
+ggplot(df, aes(x = "", y = values, fill = expense_category)) +
+  geom_bar(stat = "identity") +
+  coord_polar("y", start = 0) +
+  geom_text(data = df %>% filter(percentage > 2),
+            aes(label = paste0(round(percentage), "%")), 
+            position = position_stack(vjust = 0.5), 
+            color = "white", size = 3) +
+  scale_fill_brewer(palette = "Dark2") +
   theme_void() +
+  theme(legend.position = "bottom") +
   theme(axis.text.x=element_blank(),
         legend.title = element_blank())
-# +
-#   geom_text(aes(y = values/3 + c(0, cumsum(values)[-length(values)]), 
-#                 label = scales::percent(values/100)), size=5)
+
+
 
 ggsave("pie.svg")
 
@@ -198,15 +203,9 @@ ggsave("pie.svg")
 
 Lobbying data also tells us how often lobbyists reached out to particular legislators on behalf of a client, and what issues they lobbied them about.
 
-Unsurprisingly, real estate lobbied mostly about real estate, housing, and construction, but also played a big role in budget and tax negotiations.
+Unsurprisingly, Real Estate lobbied mostly about real estate, housing, and construction, but also played a big role in budget and tax negotiations. This data includes who real estate lobbied and on what issues and laws at both the city and state level.
 
-## Most targeted Issues
-
-```{r}
-lobbying_activities %>% group_by(lobbying_subjects) %>% summarize(contacts= n()) %>% arrange(desc(contacts)) %>% datatable()
-```
-
-Lobbyists working for real estate lobbied about good cause eviction the most, more than any other piece of legislation in the past five years.
+Lobbyists working for real estate lobbied about Good Cause Eviction the most, more than any other piece of city or state legislation in the past five years.
 
 ## Most Targeted Laws
 
@@ -231,19 +230,20 @@ lobbying_activities %>%
     focus_identifying_number == "A1915" ~ "Prevailing wage in large city developments",
     focus_identifying_number == "S305" ~ "Good Cause",
     focus_identifying_number == 'Intended introduction regarding good cause eviction' ~ "Good Cause",
+    focus_identifying_number == 'Local Law 1 (Lander)' ~ "Lead Paint Local Law 1",
+    focus_identifying_number == 'CONH Bill' ~ "Certificate of No Harrassment",
+    focus_identifying_number == 'CONH Bill' ~ "Certificate of No Harrassment",
     T ~ focus_identifying_number
   )) %>% 
   group_by(bill) %>%
   summarize(contacts= n()) %>% arrange(desc(contacts))%>%
   adorn_totals() %>% 
   filter(bill == "Total" | row_number() <= 10) %>% 
-  datatable()
+  datatable(caption = 'Note: bill names are cleaned for most targeted laws, but not throughout')
 
 ```
 
-Real Estate targeted specific legislators frequently, many of them NYC legislators.
-
-## Most targeted people
+## Most Targeted People
 
 ```{r}
 parties_sum_clean <- lobbying_activities %>%
@@ -281,14 +281,14 @@ parties_sum_clean <- lobbying_activities %>%
   summarize(contacts= n()) %>% arrange(desc(contacts))%>%
   filter(!party_name_clean %in% c("General", "Executive Chamber", "Legislative Leadership")) %>% 
   #head(10) %>% 
-  datatable()
+  datatable(caption = 'Note: bill names are cleaned for most targeted legislators and bodies, but not throughout')
 
 
 ```
 
-But their influence also extended to the highest halls of power, frequently lobbying the executive chamber in the governor's office, and minority and majority program staff and representatives in the legislature.
+The open door to real estate extended to senior staff in the executive chamber, and both houses of the legislature, as well as officials in city and state agencies. 
 
-## Most targeted bodies
+## Most Targeted Entities
 
 ```{r}
 
@@ -306,12 +306,14 @@ bodies <- c("New York State Senate",
    mutate(party_name = case_when(
     str_detect(party_name,"Executive Chamber") ~ "Executive Chamber",
     str_detect(party_name,"Program and Counsel Staff") ~ "Legislative Leadership",
+    party_name == "New York State Senate" ~ "General Communication with State Senate",
+    party_name == "New York State Assembly" ~ "General Communication with State Assembly",
     T ~ party_name
    )) %>% 
   group_by(party_name) %>%
   summarize(contacts= n()) %>% arrange(desc(contacts))%>%
   #head(10) %>% 
-  datatable()
+  datatable(caption = 'Note: bill names are cleaned for most targeted legislators and bodies, but not throughout')
 
 ```
 
@@ -349,7 +351,7 @@ itemized_expenses %>%
   )
 ```
 
-## Lobbying contacts
+## Lobbying Targets
 
 ```{r}
 lobbying_activities %>%
@@ -362,3 +364,5 @@ lobbying_activities %>%
     icon = "fa fa-save"
   )
 ```
+
+The code for this analysis is available on [Github](https://github.com/pspauster/lobbying-research).
